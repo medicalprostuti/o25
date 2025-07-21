@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>কেমিস্ট্রি ২য় অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "অসম্পৃক্ত জৈব যৌগ শনাক্তকরণে ব্যবহৃত বিকারক কোনটি?",
+          options: {
+            A: "BaCl₂ দ্রবণ",
+            B: "NaHCO₃ দ্রবণ",
+            C: "Br₂ দ্রবণ",
+            D: "FeCl₃ দ্রবণ",
+          },
+          correct: "C",
+          explanation:
+            "<p>অসম্পৃক্ত জৈব যৌগ (যেমন অ্যালকিন ও অ্যালকাইন) শনাক্তকরণে ব্রোমিন (Br₂) দ্রবণ একটি বহুল ব্যবহৃত বিকারক। যখন ব্রোমিন দ্রবণ অসম্পৃক্ত যৌগের সাথে বিক্রিয়া করে, তখন ব্রোমিনের লাল-কমলা বর্ণ অদৃশ্য হয়ে যায়, কারণ ব্রোমিন অসম্পৃক্ত বন্ধনে সংযোজিত হয়। এটি 'ব্রোমিন দ্রবণ পরীক্ষা' নামে পরিচিত।</p>",
+        },
+        {
+          id: 2,
+          question:
+            "X + O₃ → CCl₄ Zn/H₂O ওজোনাইড → মিথান্যাল + প্রপান্যাল; X যৌগটি কী?",
+          options: {
+            A: "বিউটিন-1",
+            B: "বিউটিন-2",
+            C: "বিউটাইন-1",
+            D: "বিউটাইন-2",
+          },
+          correct: "C",
+          explanation:
+            "<p>এই বিক্রিয়াটি ওজোনolysis এর মাধ্যমে হয়, যেখানে একটি অসম্পৃক্ত যৌগ ওজোন দ্বারা ভেঙে কার্বনিল যৌগ উৎপন্ন করে। মিথান্যাল (HCHO) এবং প্রপান্যাল (CH₃CH₂CHO) উৎপন্ন হওয়ার অর্থ হলো মূল যৌগ X এর মধ্যে একটি প্রান্তীয় ত্রিবন্ধন বা দ্বিবন্ধন ছিল। যেহেতু উভয় উৎপাদ অ্যালডিহাইড, তাই এটি একটি অ্যালকাইন হওয়া উচিত। বিউটাইন-1 (CH₃-CH₂-C≡CH) এর ওজোনlysis করলে মিথান্যাল ও প্রপান্যাল উৎপন্ন হয়।</p>",
+        },
+        {
+          id: 3,
+          question:
+            "CH₂=CH-CH₃ + HBr → CH₃-CH-CH₃ (Br); বিক্রিয়াটি কোন নীতি অনুসারে ঘটে?",
+          options: {
+            A: "সায়জেফ নীতি",
+            B: "মার্কনিকভ এর নীতি",
+            C: "হাকেল তত্ত্ব",
+            D: "বিপরীত মার্কনিকভ নীতি",
+          },
+          correct: "B",
+          explanation:
+            "<p>এই বিক্রিয়াটি মার্কনিকভের নীতি অনুসরণ করে। মার্কনিকভের নীতি অনুসারে, অপ্রতিসম অ্যালকিনে অপ্রতিসম বিকারক (যেমন HBr) যুক্ত হলে, বিকারকের ধনাত্মক অংশ (H⁺) দ্বি-বন্ধনের সেই কার্বনের সাথে যুক্ত হয় যেখানে বেশি সংখ্যক হাইড্রোজেন পরমাণু আছে, এবং ঋণাত্মক অংশ (Br⁻) সেই কার্বনের সাথে যুক্ত হয় যেখানে কম সংখ্যক হাইড্রোজেন পরমাণু আছে। এখানে প্রোপিনে HBr যুক্ত হয়ে 2-ব্রোমোপ্রোপেন উৎপন্ন হয়েছে।</p>",
+        },
+        {
+          id: 4,
+          question:
+            "A + O₃ → CCl₄ Zn/H₂O ওজোনাইড → CH₃CHO + CH₃COCH₃ + ZnO + H₂O; এ বিক্রিয়ায় নিচের কোনটি A যৌগ?",
+          options: {
+            A: "2-মিথাইলবিউটিন-1",
+            B: "3-মিথাইলবিউটিন-1",
+            C: "2-মিথাইলবিউটিন-2",
+            D: "2-মিথাইলপেন্টিন-2",
+          },
+          correct: "C",
+          explanation:
+            "<p>এই বিক্রিয়াটি ওজোনlysis এর মাধ্যমে সংঘটিত হয়েছে। অ্যাসিটালডিহাইড (CH₃CHO) এবং অ্যাসিটোন (CH₃COCH₃) উৎপন্ন হওয়ার অর্থ হলো মূল অ্যালকিন A এর দ্বিবন্ধনটি এমনভাবে বিন্যস্ত ছিল যা ভাঙলে এই দুটি কার্বনিল যৌগ পাওয়া যায়। 2-মিথাইলবিউটিন-2 (CH₃-C(CH₃)=CH-CH₃) এর ওজোনlysis করলে অ্যাসিটোন (CH₃COCH₃) এবং অ্যাসিটালডিহাইড (CH₃CHO) উৎপন্ন হয়।</p>",
+        },
+        {
+          id: 5,
+          question:
+            "নিম্নের কোন নিরুদকের প্রভাবে 160°C তাপমাত্রায় ইথানল থেকে অসম্পৃক্ত যৌগ ইথিলিন উৎপন্ন হয়?",
+          options: {
+            A: "H₃PO₄",
+            B: "H₂SO₄",
+            C: "HCl",
+            D: "HNO₃",
+          },
+          correct: "B",
+          explanation:
+            "<p>ইথানল (C₂H₅OH) কে গাঢ় সালফিউরিক অ্যাসিড (H₂SO₄) এর উপস্থিতিতে 160°C-170°C তাপমাত্রায় উত্তপ্ত করলে নিরুদন বিক্রিয়ার মাধ্যমে ইথিলিন (C₂H₄), একটি অসম্পৃক্ত যৌগ, উৎপন্ন হয়। সালফিউরিক অ্যাসিড এখানে নিরুদক হিসেবে কাজ করে, অর্থাৎ এটি জলীয় অণু অপসারণ করে।</p>",
+        },
+        {
+          id: 6,
+          question: "ইথিলিনের ব্যবহার নিম্নের কোনটি?",
+          options: {
+            A: "আইসো-প্রোপাইল অ্যালকোহল তৈরিতে",
+            B: "চেতনানাশক রূপে",
+            C: "প্লাস্টিক শিল্পে",
+            D: "অ্যাসিটোন তৈরিতে",
+          },
+          correct: "B",
+          explanation:
+            "<p>ইথিলিন (C₂H₄) একটি গ্যাসীয় যৌগ যা বিভিন্ন শিল্পে ব্যবহৃত হয়। এর অন্যতম ব্যবহার হলো চেতনানাশক হিসেবে। চিকিৎসা ক্ষেত্রে এটি স্বল্প সময়ের জন্য চেতনানাশক হিসেবে ব্যবহার করা হয়। এছাড়া এটি পলিথিন তৈরিতে এবং ফল পাকানোর কাজেও ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 7,
+          question:
+            "প্রায় 150°C তাপমাত্রায় নিম্নের কোন প্রভাবকের উপস্থিতিতে ইথাইন থেকে ইথিন উৎপন্ন হয়?",
+          options: {
+            A: "নিকেল",
+            B: "অ্যাসিটিলিন",
+            C: "H₂SO₄",
+            D: "ভিনাইল অ্যালকোহল",
+          },
+          correct: "A",
+          explanation:
+            "<p>ইথাইন (C₂H₂) থেকে ইথিন (C₂H₄) উৎপাদনের জন্য আংশিক হাইড্রোজেনেশন বিক্রিয়া ব্যবহার করা হয়। এই বিক্রিয়াটি নিকেল (Ni) প্রভাবকের উপস্থিতিতে প্রায় 150°C তাপমাত্রায় ঘটে। নিকেল প্রভাবক ইথাইনের ত্রিবন্ধনকে দ্বিবন্ধনে বিজারিত করতে সাহায্য করে।</p>",
+        },
+        {
+          id: 8,
+          question: "ইথাইন + H₂ → Pd BaSO₄ X; এক্ষেত্রে 'X' যৌগটি কী?",
+          options: {
+            A: "CH₃CH₂-SO₂H",
+            B: "CH₂=CH₂",
+            C: "CH₃-CH₃",
+            D: "C₆H₆",
+          },
+          correct: "B",
+          explanation:
+            "<p>এই বিক্রিয়াটি লিন্ডলার প্রভাবকের (Pd/BaSO₄) উপস্থিতিতে ইথাইনের আংশিক হাইড্রোজেনেশন। লিন্ডলার প্রভাবক অ্যালকাইনকে সম্পূর্ণরূপে অ্যালকেনে বিজারিত না করে শুধুমাত্র অ্যালকিনে বিজারিত করে। তাই, ইথাইন (HC≡CH) হাইড্রোজেনেশন বিক্রিয়ার মাধ্যমে ইথিন (CH₂=CH₂) উৎপন্ন করে।</p>",
+        },
+        {
+          id: 9,
+          question: "অ্যালকিনের নিশ্চিতকরণ পরীক্ষা কোনটি?",
+          options: {
+            A: "Br₂ দ্রবণ",
+            B: "টলেন বিকারক",
+            C: "PCl₅ পরীক্ষা",
+            D: "নেসলার দ্রবণ",
+          },
+          correct: "A",
+          explanation:
+            "<p>অ্যালকিনের নিশ্চিতকরণ পরীক্ষার জন্য ব্রোমিন দ্রবণ (Br₂ দ্রবণ) ব্যবহৃত হয়। অ্যালকিন অসম্পৃক্ত যৌগ হওয়ায় ব্রোমিন এর সাথে সংযোজন বিক্রিয়া করে ব্রোমিনের লাল-কমলা বর্ণকে বর্ণহীন করে দেয়। এটি দ্বিবন্ধনের উপস্থিতি প্রমাণ করে।</p>",
+        },
+        {
+          id: 10,
+          question:
+            "ইথাইল অ্যালকোহলকে গাঢ় H₂SO₄ সহ উত্তপ্ত করলে কোনটি উৎপন্ন হয়?",
+          options: {
+            A: "CH₃COOC₂H₅",
+            B: "C₂H₄",
+            C: "C₂H₂",
+            D: "C₂H₆",
+          },
+          correct: "B",
+          explanation:
+            "<p>ইথাইল অ্যালকোহল (C₂H₅OH) কে গাঢ় সালফিউরিক অ্যাসিড (H₂SO₄) এর উপস্থিতিতে 160°C-170°C তাপমাত্রায় উত্তপ্ত করলে নিরুদন বিক্রিয়ার মাধ্যমে ইথিলিন (C₂H₄) উৎপন্ন হয়। এই বিক্রিয়ায় সালফিউরিক অ্যাসিড নিরুদক হিসেবে কাজ করে এবং জলীয় অণু অপসারণ করে।</p>",
+        },
+        {
+          id: 11,
+          question:
+            "নিম্নের যৌগগুলোর মধ্যে কোনটি সহজে ব্রোমিনের সাথে বিক্রিয়া করে?",
+          options: {
+            A: "C₆H₆",
+            B: "C₄H₈",
+            C: "C₂H₂",
+            D: "C₄H₁₀",
+          },
+          correct: "B",
+          explanation:
+            "<p>ব্রোমিনের সাথে সহজে বিক্রিয়া করে অসম্পৃক্ত যৌগগুলো। C₆H₆ (বেনজিন) একটি অ্যারোমেটিক যৌগ এবং এটি প্রতিস্থাপন বিক্রিয়া দেয়, সহজে সংযোজন বিক্রিয়া নয়। C₄H₁₀ (বিউটেন) একটি সম্পৃক্ত অ্যালকেন, যা ব্রোমিনের সাথে ধীর প্রতিস্থাপন বিক্রিয়া দেয়। C₂H₂ (ইথাইন) এবং C₄H₈ (বিউটিন) উভয়ই অসম্পৃক্ত। তবে, অ্যালকিন (C₄H₈) অ্যালকাইনের চেয়ে দ্রুত এবং সহজে ব্রোমিনের সাথে সংযোজন বিক্রিয়া করে।</p>",
+        },
+        {
+          id: 12,
+          question: "নিচের কোন বিক্রিয়াটি মারকনিকভের নীতি অনুসরণ করে না?",
+          options: {
+            A: "CH₃CH=CH₂ + HCl",
+            B: "CH₃-CH=CH₂ + HBr +(জৈব পারক্সাইড)",
+            C: "CH₃-CH=CH₂ + HI",
+            D: "CH₃-CH=CH₂ + H₂SO₄",
+          },
+          correct: "B",
+          explanation:
+            "<p>মার্কনিকভের নীতি অনুসারে, অপ্রতিসম অ্যালকিনে অপ্রতিসম বিকারক (যেমন HBr) যুক্ত হলে, বিকারকের হাইড্রোজেন পরমাণু দ্বিবন্ধনের সেই কার্বনের সাথে যুক্ত হয় যেখানে বেশি সংখ্যক হাইড্রোজেন পরমাণু আছে। কিন্তু জৈব পারক্সাইডের উপস্থিতিতে HBr এর সংযোজন বিক্রিয়া বিপরীত মার্কনিকভ নীতি অনুসরণ করে। এখানে হাইড্রোজেন পরমাণু দ্বিবন্ধনের সেই কার্বনের সাথে যুক্ত হয় যেখানে কম সংখ্যক হাইড্রোজেন পরমাণু আছে।</p>",
+        },
+        {
+          id: 13,
+          question: "CH₃CH₂CH₂Cl + KOH (alc) → B; এক্ষেত্রে B যৌগটির নাম কী?",
+          options: {
+            A: "প্রোপান্যাল",
+            B: "প্রোপানল",
+            C: "প্রোপেন",
+            D: "প্রোপিন",
+          },
+          correct: "D",
+          explanation:
+            "<p>এটি একটি অপসারণ বিক্রিয়া। যখন 1-ক্লোরোপ্রোপেন (CH₃CH₂CH₂Cl) কে অ্যালকোহলীয় পটাশিয়াম হাইড্রোক্সাইড (KOH (alc)) এর সাথে উত্তপ্ত করা হয়, তখন ক্লোরিন পরমাণু এবং পাশ্ববর্তী কার্বন থেকে একটি হাইড্রোজেন পরমাণু অপসারিত হয়ে একটি দ্বিবন্ধন তৈরি হয়। এর ফলে প্রোপিন (CH₃CH=CH₂) উৎপন্ন হয়।</p>",
+        },
+        {
+          id: 14,
+          question: "অ্যালকিনের সাধারণ সংকেত কোনটি?",
+          options: {
+            A: "C<sub>n</sub>H<sub>2n+2</sub>",
+            B: "C<sub>n</sub>H<sub>2n+1</sub>",
+            C: "C<sub>n</sub>H<sub>2n</sub>",
+            D: "C<sub>n</sub>H<sub>2n-2</sub>",
+          },
+          correct: "C",
+          explanation:
+            "<p>অ্যালকিন হলো অসম্পৃক্ত হাইড্রোকার্বন যাতে অন্তত একটি কার্বন-কার্বন দ্বিবন্ধন থাকে। এদের সাধারণ আণবিক সংকেত C<sub>n</sub>H<sub>2n</sub>, যেখানে 'n' হলো কার্বন পরমাণুর সংখ্যা এবং n ≥ 2। এই সংকেতটি কার্বন পরমাণুর সংখ্যার দ্বিগুণ হাইড্রোজেন পরমাণুর উপস্থিতি নির্দেশ করে।</p>",
+        },
+        {
+          id: 15,
+          question: "CH₂=CHBr + HBr → A যৌগ; এক্ষেত্রে A যৌগ কোনটি?",
+          options: {
+            A: "CH₃-CHBr₂",
+            B: "CH(Br)-CH(Br)",
+            C: "CHBr=CH₂",
+            D: "CH₂Br-CH₂Br",
+          },
+          correct: "A",
+          explanation:
+            "<p>এই বিক্রিয়াটি মার্কনিকভের নীতি অনুসরণ করে। ভিনাইল ব্রোমাইড (CH₂=CHBr) একটি অপ্রতিসম অ্যালকিন। যখন HBr এর সাথে বিক্রিয়া করে, তখন H⁺ দ্বিবন্ধনের সেই কার্বনে যুক্ত হয় যেখানে বেশি হাইড্রোজেন আছে (বাম পাশের CH₂), এবং Br⁻ সেই কার্বনে যুক্ত হয় যেখানে কম হাইড্রোজেন আছে (ডান পাশের CHBr)। ফলে 1,1-ডাইব্রোমোইথেন (CH₃-CHBr₂) উৎপন্ন হয়।</p>",
+        },
+        {
+          id: 16,
+          question: "CH₂=CH₂ + KMnO₄ +পানি → বিক্রিয়াটির প্রধান উৎপাদ-",
+          options: {
+            A: "ইথানয়িক এসিড",
+            B: "ইথিলিন গ্লাইকল",
+            C: "ইথানল",
+            D: "ইথানালডিহাইড",
+          },
+          correct: "B",
+          explanation:
+            "<p>এটি বেইয়ার পরীক্ষা নামে পরিচিত, যেখানে ইথিলিন (CH₂=CH₂) এর সাথে ক্ষারীয় পটাশিয়াম পারম্যাঙ্গানেট (KMnO₄) এবং পানির বিক্রিয়া ঘটে। এই বিক্রিয়ায় ইথিলিনের দ্বিবন্ধন ভেঙে যায় এবং দুটি হাইড্রক্সিল (-OH) মূলক যুক্ত হয়ে 1,2-ইথেনডাইওল বা ইথিলিন গ্লাইকল (HO-CH₂-CH₂-OH) উৎপন্ন হয়। KMnO₄ এর বেগুনি বর্ণ অদৃশ্য হয়ে যায়।</p>",
+        },
+        {
+          id: 17,
+          question:
+            "1-ব্রোমোপ্রোপেন হতে প্রোপিন প্রস্তুতি বিক্রিয়া নিম্নরূপ- C₃H₇Br + NaOH → C₃H₆ + H₂O + NaBr; বিক্রিয়াটি কোন শ্রেণিভুক্ত?",
+          options: {
+            A: "Elimination",
+            B: "Oxidation",
+            C: "Reduction",
+            D: "Substitution",
+          },
+          correct: "A",
+          explanation:
+            "<p>এই বিক্রিয়াটি অপসারণ (Elimination) বিক্রিয়ার একটি উদাহরণ। এখানে 1-ব্রোমোপ্রোপেন থেকে ব্রোমিন পরমাণু এবং পাশ্ববর্তী কার্বন থেকে একটি হাইড্রোজেন পরমাণু অপসারিত হয়ে একটি দ্বিবন্ধন তৈরি হয়েছে, যার ফলে প্রোপিন উৎপন্ন হয়েছে। এই ধরনের বিক্রিয়া সাধারণত অ্যালকোহলীয় ক্ষার (যেমন NaOH) এর উপস্থিতিতে ঘটে।</p>",
+        },
+        {
+          id: 18,
+          question: "নিচের কোন বিক্রিয়াটি মারকনিকভের নীতি অনুসরণ করবে?",
+          options: {
+            A: "CH₃-CH=CH-CH₃ + HBr",
+            B: "(CH₃)₂C=C(CH₃)₂ + Br₂",
+            C: "CH₃-CH=CH₂ + Br₂",
+            D: "(CH₃)₂C=CH₂ + HBr",
+          },
+          correct: "D",
+          explanation:
+            "<p>মার্কনিকভের নীতি শুধুমাত্র অপ্রতিসম অ্যালকিনে অপ্রতিসম বিকারকের সংযোজন বিক্রিয়ার ক্ষেত্রে প্রযোজ্য। (CH₃)₂C=CH₂ (2-মিথাইলপ্রোপিন) একটি অপ্রতিসম অ্যালকিন এবং HBr একটি অপ্রতিসম বিকারক। এই বিক্রিয়ায় H⁺ দ্বিবন্ধনের CH₂ এর সাথে এবং Br⁻ দ্বিবন্ধনের (CH₃)₂C এর সাথে যুক্ত হবে, যা মার্কনিকভের নীতি অনুসরণ করে।</p>",
+        },
+        {
+          id: 19,
+          question:
+            "নিচের কোনটি পারঅক্সাইডের উপস্থিতিতে মারকনিকভের নীতির ব্যতিক্রম প্রদর্শন করে?",
+          options: {
+            A: "HF",
+            B: "HCl",
+            C: "HBr",
+            D: "HI",
+          },
+          correct: "C",
+          explanation:
+            "<p>পারঅক্সাইডের উপস্থিতিতে শুধুমাত্র হাইড্রোজেন ব্রোমাইড (HBr) মার্কনিকভের নীতির ব্যতিক্রম প্রদর্শন করে, যা বিপরীত মার্কনিকভ নীতি বা খারাসচ প্রভাব নামে পরিচিত। এই প্রভাবের কারণে HBr এর সংযোজন ফ্রি-রেডিক্যাল পদ্ধতির মাধ্যমে ঘটে এবং হাইড্রোজেন পরমাণু দ্বিবন্ধনের সেই কার্বনের সাথে যুক্ত হয় যেখানে কম হাইড্রোজেন আছে।</p>",
+        },
+        {
+          id: 20,
+          question: "নিচের কোনটিকে ওজোনীকরণ করলে প্রোপানোন পাওয়া যাবে?",
+          options: {
+            A: "বিউট-1-ইন",
+            B: "বিউট-2-ইন",
+            C: "2-মিথাইলপ্রোপ-1-ইন",
+            D: "3-মিথাইলবিউট-1-ইন",
+          },
+          correct: "C",
+          explanation:
+            "<p>ওজোনীকরণ (ozonolysis) বিক্রিয়ায় অ্যালকিনের দ্বিবন্ধন ভেঙে যায় এবং কার্বনিল যৌগ উৎপন্ন হয়। প্রোপানোন (অ্যাসিটোন, CH₃COCH₃) উৎপন্ন হওয়ার জন্য মূল অ্যালকিনে একটি কার্বন পরমাণুতে দুটি মিথাইল মূলক এবং দ্বিবন্ধন থাকা প্রয়োজন। 2-মিথাইলপ্রোপ-1-ইন (CH₂=C(CH₃)₂) এর ওজোনীকরণ করলে ফরমালডিহাইড (HCHO) এবং প্রোপানোন (CH₃COCH₃) উৎপন্ন হয়।</p>",
+        },
+        {
+          id: 21,
+          question: "কোন বিকারকের সঙ্গে ইথিন ও ইথাইন উভয়ই বিক্রিয়া করে?",
+          options: {
+            A: "AgNO₃, NH₄OH",
+            B: "Br₂ (CCl₄)",
+            C: "H₂O (H⁺)",
+            D: "CuCl, NH₄OH",
+          },
+          correct: "B",
+          explanation:
+            "<p>ইথিন (অ্যালকিন) এবং ইথাইন (অ্যালকাইন) উভয়ই অসম্পৃক্ত হাইড্রোকার্বন। ব্রোমিন (Br₂) দ্রবণ অসম্পৃক্ত বন্ধনে সংযোজন বিক্রিয়া করে, তাই ইথিন ও ইথাইন উভয়ই Br₂ (CCl₄) এর সাথে বিক্রিয়া করে ব্রোমিনের লাল-কমলা বর্ণকে বর্ণহীন করে দেয়। AgNO₃/NH₄OH এবং CuCl/NH₄OH শুধুমাত্র প্রান্তীয় অ্যালকাইন শনাক্তকরণে ব্যবহৃত হয়।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                              <label class="option" data-option="${option}">
+                                                <div class="circle">${option}</div>
+                                                <span class="option-text">${question.options[option]}</span>
+                                              </label>
+                                            `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                 <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                 <div class="explanation-content">
+                                                   <div class="explanation-label">ব্যাখ্যা:</div>
+                                                   ${question.explanation}
+                                                 </div>
+                                               </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                            <p class="question-label">${
+                                              index + 1
+                                            }. ${question.question}</p>
+                                            <div class="options">
+                                              ${optionsHTML}
+                                            </div>
+                                            ${explanationHTML}
+                                          `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
